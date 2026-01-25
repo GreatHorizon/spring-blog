@@ -200,11 +200,24 @@ public class JdbcPostRepository implements IPostRepository {
 
     @Override
     public void updatePostImage(Long postId, String path) {
-
+        jdbcTemplate.update(
+                """
+                        INSERT INTO post_image(post_id, filename) values (?, ?)
+                        ON CONFLICT (post_id) DO UPDATE
+                        SET filename = excluded.filename
+                        """,
+                postId,
+                path
+        );
     }
 
     @Override
     public String getPostImagePath(Long postId) {
+        return jdbcTemplate.queryForObject(
+                """
+                        SELECT filename FROM post_image
+                        WHERE post_id = ?
+                        """, String.class, postId);
 
     }
 }
