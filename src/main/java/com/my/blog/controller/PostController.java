@@ -29,16 +29,11 @@ public class PostController {
 
     @GetMapping
     PostsDto getPosts(
-            @RequestParam("search") String search,
-            @RequestParam("pageNumber") Integer pageNumber,
-            @RequestParam("pageSize") Integer pageSize
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "pageNumber") Integer pageNumber,
+            @RequestParam(name = "pageSize") Integer pageSize
     ) {
-
-        final var postsModels = new ArrayList<PostModel>();
-
-        postsModels.add(new PostModel(1, "Name", "text", new ArrayList<>(), 1, 1));
-
-        return new PostsDto(postsModels, false, false, 1);
+        return postService.getPosts(search, pageNumber, pageSize);
     }
 
     @GetMapping("/{id}")

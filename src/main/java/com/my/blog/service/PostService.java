@@ -20,6 +20,50 @@ public class PostService {
         postRepository.createPost(createPostDto);
     }
 
+    public PostsDto getPosts(String search, int pageNumber, int pageSize) {
+        if (pageSize <= 0) {
+            throw new IllegalArgumentException("pageSize should be > 0");
+        }
+
+        if (pageNumber <= 0) {
+            throw new IllegalArgumentException("pageNumber should be > 0");
+        }
+
+        final var searchParams = parseSearchParams(search);
+        final var offset = (pageNumber - 1) * pageSize;
+        final var postsCount = postRepository.countPosts();
+        final var pageCount = (postsCount + pageSize - 1) / pageSize;
+        final var hasNext = pageNumber + 1 < pageCount;
+        final var hasPrev = pageNumber > 1;
+
+        final var posts = postRepository.getPosts(searchParams, offset, pageSize);
+
+        return new PostsDto(posts, hasPrev, hasNext, pageCount);
+    }
+
+    private static SearchParams parseSearchParams(String search) {
+        final var parts = Arrays.stream(search.split(" ")).filter((item) -> !item.isBlank()).toList();
+        final var tags = new ArrayList<String>();
+        StringJoiner joiner = new StringJoiner(" ", "", "");
+
+        parts.forEach(item -> {
+            if (item.startsWith("#")) {
+                final var tagName = item.substring(1);
+                if (!tagName.isBlank()) {
+                    tags.add(tagName);
+                }
+            } else {
+                joiner.add(item);
+            }
+        });
+
+        return new SearchParams(joiner.toString(), tags);
+    }
+
+    public PostModel updatePost(PostUpdateDto postUpdateDto) {
+        return postRepository.updatePost(postUpdateDto);
+    }
+
     public PostModel getPost(long id) {
         return postRepository.getPost(id);
     }
