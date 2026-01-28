@@ -1,4 +1,4 @@
 package com.my.blog.model;
 
-public record CommentModel(int id, String text, int postId) {
+public record CommentModel(long id, String text, long postId) {
 }

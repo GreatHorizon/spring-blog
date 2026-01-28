@@ -1,6 +1,6 @@
 package com.my.blog.controller;
 
-import com.my.blog.dto.CreatePostDto;
+import com.my.blog.dto.PostUpdateDto;
 import com.my.blog.dto.PostsDto;
 import com.my.blog.model.CommentModel;
 import com.my.blog.model.PostModel;
@@ -12,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -42,13 +41,13 @@ public class PostController {
     }
 
     @PostMapping()
-    void createPost(@RequestBody CreatePostDto createPostDto) {
-        postService.savePost(createPostDto);
+    void createPost(@RequestBody PostUpdateDto postUpdateDto) {
+        postService.savePost(postUpdateDto);
     }
 
     @PutMapping("/{id}")
-    PostModel updatePost(@PathVariable int id, @RequestBody PostsDto postsDto) {
-        return new PostModel(1, "Name", "text", new ArrayList<>(), 1, 1);
+    PostModel updatePost(@PathVariable("id") int id, @RequestBody PostUpdateDto postsDto) {
+        return postService.updatePost(postsDto);
     }
 
     @DeleteMapping("/{id}")
@@ -62,7 +61,7 @@ public class PostController {
     }
 
     @PutMapping("/{id}/image")
-    public String updateImage(@PathVariable("id") Long postId, @RequestParam("file") MultipartFile file) {
+    public String updateImage(@PathVariable("id") Long postId, @RequestParam("image") MultipartFile file) {
         final var filePath = filesService.upload(file);
 
         if (filePath == null) {
@@ -78,7 +77,11 @@ public class PostController {
     ResponseEntity<Resource> getImage(@PathVariable("id")  Long id) {
         final var imagePath = postService.getPostImagePath(id);
 
-        Resource file = filesService.download(imagePath);
+        if  (imagePath.isEmpty()) {
+            return ResponseEntity.ok().build();
+        }
+
+        Resource file = filesService.download(imagePath.get());
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -89,5 +92,14 @@ public class PostController {
     List<CommentModel> getComments(@PathVariable("id") Long id) {
         return postService.getComments(id);
     }
+
+    @GetMapping("/{post_id}/comments/{comment_id}")
+    CommentModel getComment(@PathVariable("post_id") Long postId, @PathVariable("comment_id") Long commentId) {
+        return postService.getComment(postId, commentId);
+    }
+
+
+
+
 
 }

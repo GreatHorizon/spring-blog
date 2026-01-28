@@ -1,12 +1,14 @@
 package com.my.blog.service;
 
-import com.my.blog.dto.CreatePostDto;
+import com.my.blog.dto.PostUpdateDto;
+import com.my.blog.dto.PostsDto;
 import com.my.blog.model.CommentModel;
 import com.my.blog.model.PostModel;
 import com.my.blog.repository.IPostRepository;
+import com.my.blog.utils.SearchParams;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.*;
 
 @Service
 public class PostService {
@@ -16,8 +18,8 @@ public class PostService {
         this.postRepository = jdbcPostRepository;
     }
 
-    public void savePost(CreatePostDto createPostDto) {
-        postRepository.createPost(createPostDto);
+    public void savePost(PostUpdateDto postUpdateDto) {
+        postRepository.createPost(postUpdateDto);
     }
 
     public PostsDto getPosts(String search, int pageNumber, int pageSize) {
@@ -80,6 +82,10 @@ public class PostService {
         return postRepository.getComments(id);
     }
 
+    public CommentModel getComment(long postId, long commentId) {
+        return postRepository.getComment(postId, commentId);
+    }
+
     public void deleteComment(long postId, long commentId) {
         postRepository.deleteComment(postId, commentId);
     }
@@ -96,7 +102,7 @@ public class PostService {
         postRepository.updatePostImage(postId, path);
     }
 
-    public String getPostImagePath(Long postId) {
+    public Optional<String> getPostImagePath(Long postId) {
         return postRepository.getPostImagePath(postId);
     }
 }
