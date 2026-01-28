@@ -315,40 +315,73 @@ public class JdbcPostRepository implements IPostRepository {
     }
 
     @Override
-    public List<CommentModel> getComments(long id) {
-        return List.of();
+    public List<CommentModel> getComments(long postId) {
+        final var getCommentsQuery = """
+                SELECT id, text, post_id FROM comment
+                WHERE post_id = ?
+                """;
+
+        return jdbcTemplate.query(
+                getCommentsQuery,
+                (rs, rowNum) ->
+                        new CommentModel(
+                                rs.getLong("id"),
+                                rs.getString("text"),
+                                rs.getLong("post_id")
+                        ),
+                postId
+        );
     }
 
     @Override
-    public CommentModel getComment(long postId, long commentId) {
+    public CommentModel getComment(long commentId) {
         return jdbcTemplate.queryForObject(
                 """
-                        SELECT id, text FROM comment
+                        SELECT id, text, post_id FROM comment
                         WHERE id = ?
                         """,
 
                 (rs, rowNum) -> new CommentModel(
                         rs.getLong("id"),
                         rs.getString("text"),
-                        postId
+                        rs.getLong("post_id")
                 ),
                 commentId
         );
     }
 
     @Override
-    public void deleteComment(long postId, long commentId) {
-
+    public void deleteComment(long commentId) {
+        jdbcTemplate.update(
+                """
+                        DELETE FROM comment
+                        WHERE id = ?;
+                        """, commentId);
     }
 
     @Override
-    public void createComment(CommentModel commentModel) {
+    public CommentModel createComment(CommentModel commentModel) {
+        final var commentId = jdbcTemplate.queryForObject(
+                """
+                        INSERT INTO comment(post_id, text) values(?, ?)
+                        RETURNING id;
+                        """, Long.class,
+                commentModel.postId(), commentModel.text());
 
+        return getComment(commentId);
     }
 
     @Override
-    public void updateComment(CommentModel commentModel) {
+    public CommentModel updateComment(CommentModel commentModel) {
+        final var updateCommentQuery = """
+                UPDATE comment SET
+                text = ?
+                where post_id = ?
+                """;
 
+        jdbcTemplate.update(updateCommentQuery, commentModel.text(), commentModel.postId());
+
+        return getComment(commentModel.id());
     }
 
     @Override

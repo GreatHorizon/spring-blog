@@ -74,10 +74,10 @@ public class PostController {
     }
 
     @GetMapping("/{id}/image")
-    ResponseEntity<Resource> getImage(@PathVariable("id")  Long id) {
+    ResponseEntity<Resource> getImage(@PathVariable("id") Long id) {
         final var imagePath = postService.getPostImagePath(id);
 
-        if  (imagePath.isEmpty()) {
+        if (imagePath.isEmpty()) {
             return ResponseEntity.ok().build();
         }
 
@@ -95,11 +95,23 @@ public class PostController {
 
     @GetMapping("/{post_id}/comments/{comment_id}")
     CommentModel getComment(@PathVariable("post_id") Long postId, @PathVariable("comment_id") Long commentId) {
-        return postService.getComment(postId, commentId);
+        return postService.getComment(commentId);
     }
 
+    @PostMapping("/{post_id}/comments")
+    CommentModel createComment(@PathVariable("post_id") Long postId, @RequestBody CommentModel commentModel) {
+        return postService.createComment(commentModel);
+    }
 
+    @PutMapping("/{post_id}/comments/{comment_id}")
+    CommentModel updateComment(@PathVariable("post_id") Long postId, @PathVariable("comment_id") Long commentId, @RequestBody CommentModel commentModel) {
+        return postService.updateComment(commentModel);
+    }
 
+    @DeleteMapping("/{post_id}/comments/{comment_id}")
+    void deleteComment(@PathVariable("post_id") Long postId, @PathVariable("comment_id") Long commentId) {
+        postService.deleteComment(commentId);
+    }
 
 
 }

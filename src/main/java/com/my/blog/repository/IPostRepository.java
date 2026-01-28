@@ -25,13 +25,13 @@ public interface IPostRepository {
 
     List<CommentModel> getComments(long postId);
 
-    CommentModel getComment(long postId, long commentId);
+    CommentModel getComment(long commentId);
 
-    void deleteComment(long postId, long commentId);
+    void deleteComment(long commentId);
 
-    void createComment(CommentModel commentModel);
+    CommentModel createComment(CommentModel commentModel);
 
-    void updateComment(CommentModel commentModel);
+    CommentModel updateComment(CommentModel commentModel);
 
     void updatePostImage(Long postId, String path);
 

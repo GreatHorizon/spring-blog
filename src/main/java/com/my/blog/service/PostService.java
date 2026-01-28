@@ -82,20 +82,20 @@ public class PostService {
         return postRepository.getComments(id);
     }
 
-    public CommentModel getComment(long postId, long commentId) {
-        return postRepository.getComment(postId, commentId);
+    public CommentModel getComment(long commentId) {
+        return postRepository.getComment(commentId);
     }
 
-    public void deleteComment(long postId, long commentId) {
-        postRepository.deleteComment(postId, commentId);
+    public void deleteComment(long commentId) {
+        postRepository.deleteComment(commentId);
     }
 
-    public void createComment(CommentModel commentModel) {
-
+    public CommentModel createComment(CommentModel commentModel) {
+        return postRepository.createComment(commentModel);
     }
 
-    public void updateComment(CommentModel commentModel) {
-
+    public CommentModel updateComment(CommentModel commentModel) {
+        return postRepository.updateComment(commentModel);
     }
 
     public void updatePostImage(Long postId, String path) {
