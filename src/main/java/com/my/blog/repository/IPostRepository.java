@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IPostRepository {
-    void createPost(PostUpdateDto postUpdateDto);
+    PostModel createPost(PostUpdateDto postUpdateDto);
 
     List<PostModel> getPosts(SearchParams searchParams, int offset, int limit);
 

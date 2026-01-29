@@ -41,8 +41,8 @@ public class PostController {
     }
 
     @PostMapping()
-    void createPost(@RequestBody PostUpdateDto postUpdateDto) {
-        postService.savePost(postUpdateDto);
+    PostModel createPost(@RequestBody PostUpdateDto postUpdateDto) {
+        return postService.createPost(postUpdateDto);
     }
 
     @PutMapping("/{id}")

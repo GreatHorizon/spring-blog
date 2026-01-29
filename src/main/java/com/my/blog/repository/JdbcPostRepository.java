@@ -1,6 +1,6 @@
 package com.my.blog.repository;
 
-import com.my.blog.PostMapper;
+import com.my.blog.mapper.PostRowMapper;
 import com.my.blog.dto.PostUpdateDto;
 import com.my.blog.model.CommentModel;
 import com.my.blog.model.PostModel;
@@ -14,8 +14,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,14 +64,14 @@ public class JdbcPostRepository implements IPostRepository {
     private void updatePostTags(PostUpdateDto postUpdateDto) {
         removeTagRelations(postUpdateDto);
 
-        insertTags(postUpdateDto);
+        insertTags(postUpdateDto.id(), postUpdateDto.tags());
 
     }
 
-    private void insertTags(PostUpdateDto postUpdateDto) {
-        insertTags(postUpdateDto.tags());
+    private void insertTags(Long postId, List<String> tagNames) {
+        insertTags(tagNames);
 
-        insertPostTagRelations(postUpdateDto.id(), postUpdateDto.tags());
+        insertPostTagRelations(postId, tagNames);
     }
 
     private void removeTagRelations(PostUpdateDto postUpdateDto) {
@@ -123,12 +121,15 @@ public class JdbcPostRepository implements IPostRepository {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void createPost(PostUpdateDto postUpdateDto) {
-        insertPost(postUpdateDto);
-        insertTags(postUpdateDto);
+    public PostModel createPost(PostUpdateDto postUpdateDto) {
+        final var id = insertPost(postUpdateDto);
+
+        insertTags(id, postUpdateDto.tags());
+
+        return getPost(id);
     }
 
-    private void insertPost(PostUpdateDto postUpdateDto) {
+    private Long insertPost(PostUpdateDto postUpdateDto) {
         final var createPostQuery = """
                 INSERT INTO post(text, title)
                 values (:text, :title)
@@ -139,13 +140,15 @@ public class JdbcPostRepository implements IPostRepository {
 
         final var params = new MapSqlParameterSource()
                 .addValue("text", postUpdateDto.text())
-                .addValue("titles", postUpdateDto.title());
+                .addValue("title", postUpdateDto.title());
 
         final var postId = namedTemplate.queryForObject(createPostQuery, params, Long.class);
 
         if (postId == null) {
             throw new IllegalStateException("Post ID was null after insert");
         }
+
+        return postId;
     }
 
     private void insertTags(List<String> tags) {
@@ -191,27 +194,6 @@ public class JdbcPostRepository implements IPostRepository {
 
     @Override
     public List<PostModel> getPosts(SearchParams searchParams, int offset, int limit) {
-//        final var query = """
-//                SELECT
-//                    p.id,
-//                    p.title,
-//                    p.text,
-//                    p.likes_count,
-//                    COUNT(DISTINCT c.id) AS comments_count,
-//                    ARRAY_AGG(DISTINCT t.title)
-//                        FILTER (WHERE t.title IS NOT NULL) AS tags
-//                FROM post p
-//                LEFT JOIN comment c ON c.post_id = p.id
-//                LEFT JOIN post_tag pt ON pt.post_id = p.id
-//                LEFT JOIN tag t ON t.id = pt.tag_id
-//                WHERE (:search::text IS NULL OR p.title LIKE :search::text)
-//                GROUP BY p.id, p.title, p.text, p.likes_count, p.created_at
-//                HAVING (cardinality(:tags) = 0 OR BOOL_OR(t.title = ANY (:tags)))
-//                ORDER BY p.created_at DESC
-//                OFFSET :offset
-//                LIMIT :limit
-//                """;
-
         String query = DATASET_CTE + """
                     SELECT *
                     FROM dataset
@@ -238,7 +220,7 @@ public class JdbcPostRepository implements IPostRepository {
                                 : searchParams.tagNames().toArray(new String[0])
                 );
 
-        return named.query(query, params, new PostMapper());
+        return named.query(query, params, new PostRowMapper());
     }
 
     @Override
@@ -313,22 +295,7 @@ public class JdbcPostRepository implements IPostRepository {
                               WHERE p.id = ?
                         
                         """,
-                (rs, rowNum) -> new PostModel(
-                        rs.getLong("id"),
-                        rs.getString("title"),
-                        rs.getString("text"),
-                        Optional.ofNullable(rs.getArray("tags"))
-                                .map(a -> {
-                                    try {
-                                        return Arrays.asList((String[]) a.getArray());
-                                    } catch (SQLException e) {
-                                        throw new IllegalStateException("Failed to read tags array", e);
-                                    }
-                                })
-                                .orElse(new ArrayList<>()),
-                        rs.getInt("likes_count"),
-                        rs.getInt("comments_count")
-                ),
+                new PostRowMapper(),
                 id
         );
     }

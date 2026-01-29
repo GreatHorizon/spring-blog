@@ -1,4 +1,4 @@
-package com.my.blog;
+package com.my.blog.mapper;
 
 import com.my.blog.model.PostModel;
 import org.springframework.jdbc.core.RowMapper;
@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-public class PostMapper implements RowMapper<PostModel> {
+public class PostRowMapper implements RowMapper<PostModel> {
     @Override
     public PostModel mapRow(ResultSet rs, int rowNum) throws SQLException {
         return new PostModel(

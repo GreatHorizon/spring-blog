@@ -18,8 +18,10 @@ public class PostService {
         this.postRepository = jdbcPostRepository;
     }
 
-    public void savePost(PostUpdateDto postUpdateDto) {
-        postRepository.createPost(postUpdateDto);
+    public PostModel createPost(PostUpdateDto postUpdateDto) {
+        validatePost(postUpdateDto);
+
+        return postRepository.createPost(postUpdateDto);
     }
 
     public PostsDto getPosts(String search, int pageNumber, int pageSize) {
