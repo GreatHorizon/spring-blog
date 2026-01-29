@@ -31,11 +31,12 @@ public class PostService {
             throw new IllegalArgumentException("pageNumber should be > 0");
         }
 
+
         final var searchParams = parseSearchParams(search);
         final var offset = (pageNumber - 1) * pageSize;
-        final var postsCount = postRepository.countPosts();
+        final var postsCount = postRepository.countPosts(searchParams);
         final var pageCount = (postsCount + pageSize - 1) / pageSize;
-        final var hasNext = pageNumber + 1 < pageCount;
+        final var hasNext = pageNumber + 1 <= pageCount;
         final var hasPrev = pageNumber > 1;
 
         final var posts = postRepository.getPosts(searchParams, offset, pageSize);
