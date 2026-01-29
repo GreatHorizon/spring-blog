@@ -15,7 +15,7 @@ public interface IPostRepository {
 
     PostModel getPost(long id);
 
-    long countPosts();
+    long countPosts(SearchParams searchParams);
 
     PostModel updatePost(PostUpdateDto postUpdateDto);
 

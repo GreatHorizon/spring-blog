@@ -1,5 +1,6 @@
 package com.my.blog.repository;
 
+import com.my.blog.PostMapper;
 import com.my.blog.dto.PostUpdateDto;
 import com.my.blog.model.CommentModel;
 import com.my.blog.model.PostModel;
@@ -7,7 +8,6 @@ import com.my.blog.model.TagModel;
 import com.my.blog.utils.SearchParams;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -28,9 +28,80 @@ public class JdbcPostRepository implements IPostRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+
+    private static final String DATASET_CTE = """
+            WITH dataset AS (
+                SELECT
+                    p.id,
+                    p.title,
+                    p.text,
+                    p.likes_count,
+                    COUNT(DISTINCT c.id) AS comments_count,
+                    ARRAY_AGG(DISTINCT t.title)
+                        FILTER (WHERE t.title IS NOT NULL) AS tags,
+                    p.created_at
+                FROM post p
+                LEFT JOIN comment c ON c.post_id = p.id
+                LEFT JOIN post_tag pt ON pt.post_id = p.id
+                LEFT JOIN tag t ON t.id = pt.tag_id
+                WHERE (:search::text IS NULL OR p.title LIKE :search::text)
+                GROUP BY p.id, p.title, p.text, p.likes_count, p.created_at
+                HAVING (
+                    cardinality(:tags::text[]) = 0
+                    OR BOOL_OR(t.title = ANY(:tags::text[]))
+                )
+            )
+            """;
+
     @Transactional
     @Override
     public PostModel updatePost(PostUpdateDto postUpdateDto) {
+        updatePostTable(postUpdateDto);
+
+        updatePostTags(postUpdateDto);
+
+        return getPost(postUpdateDto.id());
+    }
+
+    private void updatePostTags(PostUpdateDto postUpdateDto) {
+        removeTagRelations(postUpdateDto);
+
+        insertTags(postUpdateDto);
+
+    }
+
+    private void insertTags(PostUpdateDto postUpdateDto) {
+        insertTags(postUpdateDto.tags());
+
+        insertPostTagRelations(postUpdateDto.id(), postUpdateDto.tags());
+    }
+
+    private void removeTagRelations(PostUpdateDto postUpdateDto) {
+        final var tagsNames = postUpdateDto.tags();
+
+        if (tagsNames == null || tagsNames.isEmpty()) {
+            return;
+        }
+
+        final var removeTagRelationQuery = """
+                    DELETE FROM post_tag pt
+                    WHERE pt.post_id = :postId
+                      AND pt.tag_id NOT IN (
+                          SELECT t.id
+                          FROM tag t
+                          WHERE t.title IN (:titles)
+                      )
+                """;
+
+        final var namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
+        final var params = new MapSqlParameterSource()
+                .addValue("postId", postUpdateDto.id())
+                .addValue("titles", tagsNames);
+
+        namedParameterJdbcTemplate.update(removeTagRelationQuery, params);
+    }
+
+    private void updatePostTable(PostUpdateDto postUpdateDto) {
         final var updatePostQuery = """
                 UPDATE POST SET
                 title = COALESCE(?, title),
@@ -38,68 +109,43 @@ public class JdbcPostRepository implements IPostRepository {
                 where id = ?
                 """;
 
-        jdbcTemplate.update(
+        final var updated = jdbcTemplate.update(
                 updatePostQuery,
                 postUpdateDto.title(),
                 postUpdateDto.text(),
                 postUpdateDto.id()
         );
 
-        final var tagsNames = postUpdateDto.tags();
-
-        if (tagsNames != null && !tagsNames.isEmpty()) {
-            final var removeTagRelationQuery = """
-                        DELETE FROM post_tag pt
-                        WHERE pt.post_id = :postId
-                          AND pt.tag_id NOT IN (
-                              SELECT t.id
-                              FROM tag t
-                              WHERE t.title IN (:titles)
-                          )
-                    """;
-
-            var params = new MapSqlParameterSource()
-                    .addValue("postId", postUpdateDto.id())
-                    .addValue("titles", tagsNames);
-
-            NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
-
-
-            namedParameterJdbcTemplate.update(removeTagRelationQuery, params);
+        if (updated == 0) {
+            throw new RuntimeException("Post not found");
         }
-
-
-        insertTags(tagsNames);
-        insertPostTagRelations(postUpdateDto.id(), tagsNames);
-
-        return getPost(postUpdateDto.id());
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void createPost(PostUpdateDto postUpdateDto) {
+        insertPost(postUpdateDto);
+        insertTags(postUpdateDto);
+    }
+
+    private void insertPost(PostUpdateDto postUpdateDto) {
         final var createPostQuery = """
                 INSERT INTO post(text, title)
-                values (?, ?)
+                values (:text, :title)
                 RETURNING id
                 """;
 
-        final var postId = jdbcTemplate.queryForObject(
-                createPostQuery,
-                Long.class,
-                postUpdateDto.text(),
-                postUpdateDto.title()
-        );
+        final var namedTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
+
+        final var params = new MapSqlParameterSource()
+                .addValue("text", postUpdateDto.text())
+                .addValue("titles", postUpdateDto.title());
+
+        final var postId = namedTemplate.queryForObject(createPostQuery, params, Long.class);
 
         if (postId == null) {
             throw new IllegalStateException("Post ID was null after insert");
         }
-
-        final var tagsNames = postUpdateDto.tags();
-
-        insertTags(tagsNames);
-        insertPostTagRelations(postId, tagsNames);
-
     }
 
     private void insertTags(List<String> tags) {
@@ -145,76 +191,77 @@ public class JdbcPostRepository implements IPostRepository {
 
     @Override
     public List<PostModel> getPosts(SearchParams searchParams, int offset, int limit) {
-        final var getPostsQuery = """
-                SELECT
-                    p.id,
-                    p.title,
-                    p.text,
-                    p.likes_count,
-                    COUNT(DISTINCT c.id) AS comments_count,
-                    ARRAY_AGG(DISTINCT t.title)
-                        FILTER (WHERE t.title IS NOT NULL) AS tags
-                FROM post p
-                LEFT JOIN comment c ON c.post_id = p.id
-                LEFT JOIN post_tag pt ON pt.post_id = p.id
-                LEFT JOIN tag t ON t.id = pt.tag_id
-                WHERE (? IS NULL OR p.title LIKE ?)
-                GROUP BY p.id, p.title, p.text, p.likes_count, p.created_at
-                HAVING (cardinality(?) = 0 OR BOOL_OR(t.title = ANY (?)))
-                ORDER BY p.created_at desc
-                OFFSET ?
-                LIMIT ?
+//        final var query = """
+//                SELECT
+//                    p.id,
+//                    p.title,
+//                    p.text,
+//                    p.likes_count,
+//                    COUNT(DISTINCT c.id) AS comments_count,
+//                    ARRAY_AGG(DISTINCT t.title)
+//                        FILTER (WHERE t.title IS NOT NULL) AS tags
+//                FROM post p
+//                LEFT JOIN comment c ON c.post_id = p.id
+//                LEFT JOIN post_tag pt ON pt.post_id = p.id
+//                LEFT JOIN tag t ON t.id = pt.tag_id
+//                WHERE (:search::text IS NULL OR p.title LIKE :search::text)
+//                GROUP BY p.id, p.title, p.text, p.likes_count, p.created_at
+//                HAVING (cardinality(:tags) = 0 OR BOOL_OR(t.title = ANY (:tags)))
+//                ORDER BY p.created_at DESC
+//                OFFSET :offset
+//                LIMIT :limit
+//                """;
+
+        String query = DATASET_CTE + """
+                    SELECT *
+                    FROM dataset
+                    ORDER BY created_at DESC
+                    OFFSET :offset
+                    LIMIT :limit
                 """;
 
+        NamedParameterJdbcTemplate named = new NamedParameterJdbcTemplate(jdbcTemplate);
 
-        final var rowMapper = new RowMapper<PostModel>() {
-            @Override
-            public PostModel mapRow(ResultSet rs, int rowNum) throws SQLException {
-                return new PostModel(
-                        rs.getLong("id"),
-                        rs.getString("title"),
-                        rs.getString("text"),
-                        Optional.ofNullable(rs.getArray("tags"))
-                                .map(arr -> {
-                                    try {
-                                        return Arrays.asList((String[]) arr.getArray());
-                                    } catch (SQLException e) {
-                                        throw new RuntimeException(e);
-                                    }
-                                })
-                                .orElse(List.of()),
-                        rs.getInt("likes_count"),
-                        rs.getLong("comments_count")
+        String search = searchParams.searchQuery();
+        String searchLike = (search == null || search.isBlank())
+                ? null
+                : "%" + search + "%";
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("search", searchLike)
+                .addValue("offset", offset)
+                .addValue("limit", limit)
+                .addValue(
+                        "tags",
+                        searchParams.tagNames() == null
+                                ? new String[0]
+                                : searchParams.tagNames().toArray(new String[0])
                 );
-            }
-        };
-        return jdbcTemplate.query(
-                getPostsQuery,
-                ps -> {
-                    String search = searchParams.searchQuery();
-                    String searchLike = (search == null || search.isBlank())
-                            ? null
-                            : "%" + search + "%";
 
-                    // 1,2 — search
-                    ps.setString(1, searchLike);
-                    ps.setString(2, searchLike);
+        return named.query(query, params, new PostMapper());
+    }
 
-                    Array tagsArray = ps.getConnection().createArrayOf(
-                            "text",
-                            searchParams.tagNames() == null
-                                    ? new String[0]
-                                    : searchParams.tagNames().toArray(new String[0])
-                    );
-                    ps.setArray(3, tagsArray);
-                    ps.setArray(4, tagsArray);
+    @Override
+    public long countPosts(SearchParams searchParams) {
+        String sql = DATASET_CTE + "SELECT COUNT(*) FROM dataset";
 
+        NamedParameterJdbcTemplate namedTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
 
-                    ps.setInt(5, offset);
-                    ps.setInt(6, limit);
-                },
-                rowMapper
-        );
+        String search = searchParams.searchQuery();
+        String searchLike = (search == null || search.isBlank())
+                ? null
+                : "%" + search + "%";
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("search", searchLike)
+                .addValue(
+                        "tags",
+                        searchParams.tagNames() == null
+                                ? new String[0]
+                                : searchParams.tagNames().toArray(new String[0])
+                );
+
+        return Optional.ofNullable(namedTemplate.queryForObject(sql, params, Long.class)).orElse(0L);
     }
 
     private List<TagModel> getTagModels(List<String> tags) {
@@ -222,8 +269,7 @@ public class JdbcPostRepository implements IPostRepository {
             return List.of();
         }
 
-        MapSqlParameterSource params =
-                new MapSqlParameterSource("names", tags);
+        MapSqlParameterSource params = new MapSqlParameterSource("names", tags);
 
         NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
 
@@ -243,23 +289,29 @@ public class JdbcPostRepository implements IPostRepository {
     public PostModel getPost(long id) {
         return jdbcTemplate.queryForObject(
                 """
+                              SELECT
+                                  p.id,
+                                  p.title,
+                                  p.text,
+                                  p.likes_count,
+                                  COALESCE(t.tags, ARRAY[]::text[]) AS tags,
+                                  COALESCE(c.comments_count, 0) AS comments_count
+                              FROM post p
+                              LEFT JOIN (
+                                  SELECT pt.post_id,
+                                         array_agg(t.title) AS tags
+                                  FROM post_tag pt
+                                  JOIN tag t ON pt.tag_id = t.id
+                                  GROUP BY pt.post_id
+                              ) t ON t.post_id = p.id
+                              LEFT JOIN (
+                                  SELECT post_id,
+                                         COUNT(*) AS comments_count
+                                  FROM comment
+                                  GROUP BY post_id
+                              ) c ON c.post_id = p.id
+                              WHERE p.id = ?
                         
-                        SELECT
-                            p.id,
-                            p.title,
-                            p.text,
-                            p.likes_count,
-                            COALESCE(
-                                array_agg(t.title) FILTER (WHERE t.title IS NOT NULL),
-                                '{}'
-                            ) AS tags,
-                            COUNT(c.id) as comments_count
-                        FROM post p
-                                 LEFT JOIN post_tag pt ON p.id = pt.post_id
-                                 LEFT JOIN tag t ON pt.tag_id = t.id
-                                 LEFT JOIN comment c ON PT.tag_id = C.post_id
-                        WHERE p.id = ?
-                        GROUP BY p.id, p.title, p.text, p.likes_count;
                         """,
                 (rs, rowNum) -> new PostModel(
                         rs.getLong("id"),
@@ -267,11 +319,10 @@ public class JdbcPostRepository implements IPostRepository {
                         rs.getString("text"),
                         Optional.ofNullable(rs.getArray("tags"))
                                 .map(a -> {
-
                                     try {
                                         return Arrays.asList((String[]) a.getArray());
                                     } catch (SQLException e) {
-                                        throw new RuntimeException(e);
+                                        throw new IllegalStateException("Failed to read tags array", e);
                                     }
                                 })
                                 .orElse(new ArrayList<>()),
@@ -280,13 +331,6 @@ public class JdbcPostRepository implements IPostRepository {
                 ),
                 id
         );
-    }
-
-    @Override
-    public long countPosts() {
-        final var getCountQuery = "SELECT COUNT(*) FROM post";
-
-        return Optional.ofNullable(jdbcTemplate.queryForObject(getCountQuery, Long.class)).orElse(0L);
     }
 
 
@@ -361,51 +405,62 @@ public class JdbcPostRepository implements IPostRepository {
 
     @Override
     public CommentModel createComment(CommentModel commentModel) {
+        final var query = """
+                INSERT INTO comment(post_id, text) values(?, ?)
+                RETURNING id;
+                """;
+
         final var commentId = jdbcTemplate.queryForObject(
-                """
-                        INSERT INTO comment(post_id, text) values(?, ?)
-                        RETURNING id;
-                        """, Long.class,
-                commentModel.postId(), commentModel.text());
+                query,
+                Long.class,
+                commentModel.postId(),
+                commentModel.text()
+        );
+
+        if (commentId == null) {
+            throw new IllegalStateException("Failed to add comment");
+        }
 
         return getComment(commentId);
     }
 
     @Override
     public CommentModel updateComment(CommentModel commentModel) {
-        final var updateCommentQuery = """
+        final var query = """
                 UPDATE comment SET
                 text = ?
                 where post_id = ?
                 """;
 
-        jdbcTemplate.update(updateCommentQuery, commentModel.text(), commentModel.postId());
+        jdbcTemplate.update(query, commentModel.text(), commentModel.postId());
 
         return getComment(commentModel.id());
     }
 
     @Override
     public void updatePostImage(Long postId, String path) {
-        jdbcTemplate.update(
-                """
-                        INSERT INTO post_image(post_id, filename) values (?, ?)
-                        ON CONFLICT (post_id) DO UPDATE
-                        SET filename = excluded.filename
-                        """,
-                postId,
-                path
-        );
+        final var query = """
+                INSERT INTO post_image(post_id, filename) values (?, ?)
+                ON CONFLICT (post_id) DO UPDATE
+                SET filename = excluded.filename
+                """;
+
+        jdbcTemplate.update(query, postId, path);
     }
 
     @Override
     public Optional<String> getPostImagePath(Long postId) {
+        final var query = """
+                SELECT filename FROM post_image
+                WHERE post_id = ?
+                """;
+
         return jdbcTemplate.query(
-                """
-                        SELECT filename FROM post_image
-                        WHERE post_id = ?
-                        """, rs -> rs.next()
+                query
+                , rs -> rs.next()
                         ? Optional.of(rs.getString("filename"))
-                        : Optional.empty(), postId);
+                        : Optional.empty(), postId
+        );
 
     }
 }
