@@ -41,7 +41,15 @@ public class PostService {
         final var hasNext = pageNumber + 1 <= pageCount;
         final var hasPrev = pageNumber > 1;
 
-        final var posts = postRepository.getPosts(searchParams, offset, pageSize);
+        final var posts = postRepository.getPosts(searchParams, offset, pageSize).stream().map((post) -> {
+            if (post.text().length() <= 128) {
+                return post;
+            }
+
+
+            return new PostModel(post.id(), post.title(), post.text().substring(0, 128), post.tags(), post.likesCount(), post.commentsCount());
+        }).toList();
+
 
         return new PostsDto(posts, hasPrev, hasNext, pageCount);
     }
