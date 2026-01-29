@@ -46,7 +46,7 @@ public class PostController {
     }
 
     @PutMapping("/{id}")
-    PostModel updatePost(@PathVariable("id") int id, @RequestBody PostUpdateDto postsDto) {
+    PostModel updatePost(@RequestBody PostUpdateDto postsDto) {
         return postService.updatePost(postsDto);
     }
 
@@ -94,22 +94,22 @@ public class PostController {
     }
 
     @GetMapping("/{post_id}/comments/{comment_id}")
-    CommentModel getComment(@PathVariable("post_id") Long postId, @PathVariable("comment_id") Long commentId) {
+    CommentModel getComment(@PathVariable("post_id") Long ignoredPostId, @PathVariable("comment_id") Long commentId) {
         return postService.getComment(commentId);
     }
 
     @PostMapping("/{post_id}/comments")
-    CommentModel createComment(@PathVariable("post_id") Long postId, @RequestBody CommentModel commentModel) {
+    CommentModel createComment(@PathVariable("post_id") Long ignoredPostId, @RequestBody CommentModel commentModel) {
         return postService.createComment(commentModel);
     }
 
     @PutMapping("/{post_id}/comments/{comment_id}")
-    CommentModel updateComment(@PathVariable("post_id") Long postId, @PathVariable("comment_id") Long commentId, @RequestBody CommentModel commentModel) {
+    CommentModel updateComment(@PathVariable("post_id") Long ignoredPostId, @PathVariable("comment_id") Long ignoredCommentId, @RequestBody CommentModel commentModel) {
         return postService.updateComment(commentModel);
     }
 
     @DeleteMapping("/{post_id}/comments/{comment_id}")
-    void deleteComment(@PathVariable("post_id") Long postId, @PathVariable("comment_id") Long commentId) {
+    void deleteComment(@PathVariable("post_id") Long ignoredPostId, @PathVariable("comment_id") Long commentId) {
         postService.deleteComment(commentId);
     }
 
