@@ -33,7 +33,6 @@ public class PostService {
             throw new IllegalArgumentException("pageNumber should be > 0");
         }
 
-
         final var searchParams = parseSearchParams(search);
         final var offset = (pageNumber - 1) * pageSize;
         final var postsCount = postRepository.countPosts(searchParams);
@@ -74,6 +73,12 @@ public class PostService {
     }
 
     public PostModel updatePost(PostUpdateDto postUpdateDto) {
+        validatePost(postUpdateDto);
+
+        if (postUpdateDto.id() == null) {
+            throw new IllegalArgumentException("id should not be null");
+        }
+
         return postRepository.updatePost(postUpdateDto);
     }
 
@@ -102,6 +107,10 @@ public class PostService {
     }
 
     public CommentModel createComment(CommentModel commentModel) {
+        if (commentModel.text() == null) {
+            throw new IllegalArgumentException("commentModel text should not be null");
+        }
+
         return postRepository.createComment(commentModel);
     }
 
@@ -115,5 +124,19 @@ public class PostService {
 
     public Optional<String> getPostImagePath(Long postId) {
         return postRepository.getPostImagePath(postId);
+    }
+
+    private void validatePost(PostUpdateDto postUpdateDto) {
+        if (postUpdateDto.title() == null) {
+            throw new IllegalArgumentException("title should not be null");
+        }
+
+        if (postUpdateDto.text() == null) {
+            throw new IllegalArgumentException("text should not be null");
+        }
+
+        if (postUpdateDto.tags() == null) {
+            throw new IllegalArgumentException("tags should not be null");
+        }
     }
 }
