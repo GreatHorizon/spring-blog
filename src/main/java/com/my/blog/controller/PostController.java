@@ -36,7 +36,7 @@ public class PostController {
     }
 
     @GetMapping("/{id}")
-    PostModel getPost(@PathVariable("id") long id) {
+    PostModel getPost(@PathVariable("id") Long id) {
         return postService.getPost(id);
     }
 
@@ -51,7 +51,7 @@ public class PostController {
     }
 
     @DeleteMapping("/{id}")
-    void deletePost(@PathVariable("id") long id) {
+    void deletePost(@PathVariable("id") Long id) {
         postService.deletePost(id);
     }
 
