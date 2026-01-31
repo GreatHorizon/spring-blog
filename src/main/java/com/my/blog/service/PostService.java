@@ -36,6 +36,11 @@ public class PostService {
         final var searchParams = parseSearchParams(search);
         final var offset = (pageNumber - 1) * pageSize;
         final var postsCount = postRepository.countPosts(searchParams);
+
+        if (postsCount == 0) {
+            return new PostsDto(new ArrayList<>(), false, false, 0);
+        }
+
         final var pageCount = (postsCount + pageSize - 1) / pageSize;
         final var hasNext = pageNumber + 1 <= pageCount;
         final var hasPrev = pageNumber > 1;
@@ -45,8 +50,9 @@ public class PostService {
                 return post;
             }
 
+            final var shortText = post.text().substring(0, 128) + "...";
 
-            return new PostModel(post.id(), post.title(), post.text().substring(0, 128), post.tags(), post.likesCount(), post.commentsCount());
+            return new PostModel(post.id(), post.title(), shortText, post.tags(), post.likesCount(), post.commentsCount());
         }).toList();
 
 
@@ -54,6 +60,10 @@ public class PostService {
     }
 
     private static SearchParams parseSearchParams(String search) {
+        if (search == null || search.isBlank()) {
+            return new SearchParams(null, null);
+        }
+
         final var parts = Arrays.stream(search.split(" ")).filter((item) -> !item.isBlank()).toList();
         final var tags = new ArrayList<String>();
         StringJoiner joiner = new StringJoiner(" ", "", "");
@@ -82,33 +92,37 @@ public class PostService {
         return postRepository.updatePost(postUpdateDto);
     }
 
-    public PostModel getPost(long id) {
+    public PostModel getPost(Long id) {
         return postRepository.getPost(id);
     }
 
-    public void deletePost(long id) {
+    public void deletePost(Long id) {
         postRepository.deletePost(id);
     }
 
-    public int incrementLikesCount(long id) {
+    public int incrementLikesCount(Long id) {
         return postRepository.incrementLikesCount(id);
     }
 
-    public List<CommentModel> getComments(long id) {
+    public List<CommentModel> getComments(Long id) {
         return postRepository.getComments(id);
     }
 
-    public CommentModel getComment(long commentId) {
+    public CommentModel getComment(Long commentId) {
         return postRepository.getComment(commentId);
     }
 
-    public void deleteComment(long commentId) {
+    public void deleteComment(Long commentId) {
         postRepository.deleteComment(commentId);
     }
 
     public CommentModel createComment(CommentModel commentModel) {
+        if (commentModel.postId() == null) {
+            throw new IllegalArgumentException("postId should not be null");
+        }
+
         if (commentModel.text() == null) {
-            throw new IllegalArgumentException("commentModel text should not be null");
+            throw new IllegalArgumentException("text should not be null");
         }
 
         return postRepository.createComment(commentModel);

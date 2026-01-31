@@ -201,27 +201,31 @@ public class JdbcPostRepository implements IPostRepository {
                     OFFSET :offset
                     LIMIT :limit
                 """;
-
         NamedParameterJdbcTemplate named = new NamedParameterJdbcTemplate(jdbcTemplate);
 
-        String search = searchParams.searchQuery();
-        String searchLike = (search == null || search.isBlank())
-                ? null
-                : "%" + search + "%";
-
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("search", searchLike)
+        final var params = formPostsQuerySearchParams(searchParams)
                 .addValue("offset", offset)
-                .addValue("limit", limit)
-                .addValue(
-                        "tags",
-                        searchParams.tagNames() == null
-                                ? new String[0]
-                                : searchParams.tagNames().toArray(new String[0])
-                );
+                .addValue("limit", limit);
 
         return named.query(query, params, new PostRowMapper());
     }
+
+    private MapSqlParameterSource formPostsQuerySearchParams(SearchParams searchParams) {
+        final var search = searchParams.searchQuery();
+        final var searchLike = (search == null || search.isBlank())
+                ? null
+                : "%" + search + "%";
+
+        final var tags = searchParams.tagNames() == null
+                ? new String[0]
+                : searchParams.tagNames().toArray(new String[0]);
+
+
+        return new MapSqlParameterSource()
+                .addValue("search", searchLike)
+                .addValue("tags", tags);
+    }
+
 
     @Override
     public long countPosts(SearchParams searchParams) {
@@ -229,19 +233,7 @@ public class JdbcPostRepository implements IPostRepository {
 
         NamedParameterJdbcTemplate namedTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
 
-        String search = searchParams.searchQuery();
-        String searchLike = (search == null || search.isBlank())
-                ? null
-                : "%" + search + "%";
-
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("search", searchLike)
-                .addValue(
-                        "tags",
-                        searchParams.tagNames() == null
-                                ? new String[0]
-                                : searchParams.tagNames().toArray(new String[0])
-                );
+        final var params = formPostsQuerySearchParams(searchParams);
 
         return Optional.ofNullable(namedTemplate.queryForObject(sql, params, Long.class)).orElse(0L);
     }
