@@ -49,36 +49,6 @@ alter table post
 alter table comment
     alter column created_at set default now();
 
-
-SELECT
-    p.id,
-    p.title,
-    p.text,
-    p.likes_count,
-    COUNT(DISTINCT c.id)            AS comments_count,
-    ARRAY_AGG(DISTINCT t.title)
-    FILTER (WHERE t.title IS NOT NULL) AS tags
-FROM post p
-         LEFT JOIN comment c
-                   ON c.post_id = p.id
-         LEFT JOIN post_tag pt
-                   ON pt.post_id = p.id
-         LEFT JOIN tag t
-                   ON t.id = pt.tag_id
-WHERE p.title LIKE '%12%'
-GROUP BY
-    p.id,
-    p.title,
-    p.text,
-    p.likes_count,
-    p.created_at
-order by p.created_at
-offset 0
-limit 20''
-
-
 ALTER TABLE post_tag
     ADD CONSTRAINT post_tag_unique UNIQUE (post_id, tag_id);
-
-truncate post_tag;
 
