@@ -29,7 +29,7 @@ public class TestDataSourceConfig {
     }
 
     @Bean
-    JdbcPostRepository jdbcPostRepository(JdbcTemplate jdbcTemplate) {
+    JdbcPostRepository jdbcRepository(JdbcTemplate jdbcTemplate) {
         return new JdbcPostRepository(jdbcTemplate);
     }
 

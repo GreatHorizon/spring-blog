@@ -1,6 +1,5 @@
 package com.my.blog.integration.mvc;
 
-import com.my.blog.configuration.WebConfiguration;
 import com.my.blog.dto.PostUpdateDto;
 import com.my.blog.model.CommentModel;
 import com.my.blog.repository.IPostRepository;
@@ -8,6 +7,7 @@ import com.my.blog.utils.SearchParams;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
@@ -24,12 +24,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@TestPropertySource(locations = "classpath:test-application.properties")
 @SpringJUnitConfig(classes = {
-        DataSourceConfig.class,
-        WebConfiguration.class,
+        DataSourceConfiguration.class,
+        WebConfiguration.class
 })
 @WebAppConfiguration
-@TestPropertySource(locations = "classpath:test-application.properties")
 public class PostControllerIntegrationTest {
 
     @Autowired
@@ -39,6 +39,7 @@ public class PostControllerIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
+    @Qualifier("jdbcPostRepository")
     private IPostRepository repository;
 
     private MockMvc mockMvc;
@@ -296,10 +297,8 @@ public class PostControllerIntegrationTest {
         for (int i = 0; i < count; i++) {
             repository.createPost(new PostUpdateDto(null, "text", "title" + i, i % 2 == 0 ? List.of("2") : List.of("1")));
         }
-
-
-        final var postsCount = repository.countPosts(new SearchParams(null, null));
-        System.out.println(postsCount);
+        
+        repository.countPosts(new SearchParams(null, null));
     }
 }
 

@@ -7,17 +7,16 @@ import org.mockito.Mockito;
 import org.springframework.context.annotation.*;
 
 @Configuration
-@Profile("test-mock")
 public class TestConfig {
 
     @Bean
-    public IPostRepository mockPostRepository() {
+    public IPostRepository mockRepository() {
         return Mockito.mock(IPostRepository.class);
     }
 
     @Bean
     @Primary
-    public PostService postService(IPostRepository mockPostRepository) {
-        return new PostService(mockPostRepository);
+    public PostService postService(IPostRepository mockRepository) {
+        return new PostService(mockRepository);
     }
 }
