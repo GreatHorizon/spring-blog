@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -21,7 +22,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-
+@ActiveProfiles("test-mock")
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
 class PostServiceTest {
@@ -146,7 +147,7 @@ class PostServiceTest {
 
         postService.getPosts("simple search string", 1, 5);
 
-        Mockito.verify(postRepository).getPosts(new SearchParams("simple search string", new ArrayList<String>()), 0, 5);
+        Mockito.verify(postRepository).getPosts(new SearchParams("simple search string", new ArrayList<>()), 0, 5);
     }
 
     @Test
