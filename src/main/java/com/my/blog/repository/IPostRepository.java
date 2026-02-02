@@ -13,7 +13,7 @@ public interface IPostRepository {
 
     List<PostModel> getPosts(SearchParams searchParams, int offset, int limit);
 
-    PostModel getPost(long id);
+    Optional<PostModel> getPost(long id);
 
     long countPosts(SearchParams searchParams);
 

@@ -27,7 +27,7 @@ public class JdbcPostRepository implements IPostRepository {
     }
 
 
-    private static final String DATASET_CTE = """
+    private static final String POST_FILTER_DATASET_CTE = """
             WITH dataset AS (
                 SELECT
                     p.id,
@@ -58,7 +58,13 @@ public class JdbcPostRepository implements IPostRepository {
 
         updatePostTags(postUpdateDto);
 
-        return getPost(postUpdateDto.id());
+        final var post = getPost(postUpdateDto.id());
+
+        if (post.isEmpty()) {
+            throw new IllegalArgumentException("post not found");
+        }
+
+        return post.get();
     }
 
     private void updatePostTags(PostUpdateDto postUpdateDto) {
@@ -126,14 +132,20 @@ public class JdbcPostRepository implements IPostRepository {
 
         insertTags(id, postUpdateDto.tags());
 
-        return getPost(id);
+        final var post = getPost(id);
+
+        if (post.isEmpty()) {
+            throw new IllegalArgumentException("post not found");
+        }
+
+        return post.get();
     }
 
     private Long insertPost(PostUpdateDto postUpdateDto) {
         final var createPostQuery = """
-                INSERT INTO post(text, title)
-                values (:text, :title)
-                RETURNING id
+                        INSERT INTO post(text, title)
+                        values (:text, :title)
+                        RETURNING id
                 """;
 
         final var namedTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
@@ -166,9 +178,9 @@ public class JdbcPostRepository implements IPostRepository {
 
         jdbcTemplate.batchUpdate(
                 """
-                              INSERT INTO tag (title)
-                              VALUES(?)
-                              ON CONFLICT (title) DO NOTHING
+                             INSERT INTO tag (title)
+                             VALUES(?)
+                             ON CONFLICT (title) DO NOTHING
                         """,
                 batch
         );
@@ -194,13 +206,14 @@ public class JdbcPostRepository implements IPostRepository {
 
     @Override
     public List<PostModel> getPosts(SearchParams searchParams, int offset, int limit) {
-        String query = DATASET_CTE + """
+        String query = POST_FILTER_DATASET_CTE + """
                     SELECT *
                     FROM dataset
                     ORDER BY created_at DESC
                     OFFSET :offset
                     LIMIT :limit
                 """;
+
         NamedParameterJdbcTemplate named = new NamedParameterJdbcTemplate(jdbcTemplate);
 
         final var params = formPostsQuerySearchParams(searchParams)
@@ -211,12 +224,13 @@ public class JdbcPostRepository implements IPostRepository {
     }
 
     private MapSqlParameterSource formPostsQuerySearchParams(SearchParams searchParams) {
-        final var search = searchParams.searchQuery();
+
+        final var search = searchParams == null ? null : searchParams.searchQuery();
         final var searchLike = (search == null || search.isBlank())
                 ? null
                 : "%" + search + "%";
 
-        final var tags = searchParams.tagNames() == null
+        final var tags = searchParams == null || searchParams.tagNames() == null
                 ? new String[0]
                 : searchParams.tagNames().toArray(new String[0]);
 
@@ -229,13 +243,15 @@ public class JdbcPostRepository implements IPostRepository {
 
     @Override
     public long countPosts(SearchParams searchParams) {
-        String sql = DATASET_CTE + "SELECT COUNT(*) FROM dataset";
+        String sql = POST_FILTER_DATASET_CTE + "SELECT COUNT(*) FROM dataset";
 
         NamedParameterJdbcTemplate namedTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
 
         final var params = formPostsQuerySearchParams(searchParams);
 
-        return Optional.ofNullable(namedTemplate.queryForObject(sql, params, Long.class)).orElse(0L);
+        return Optional.ofNullable(
+                namedTemplate.queryForObject(sql, params, Long.class)
+        ).orElse(0L);
     }
 
     private List<TagModel> getTagModels(List<String> tags) {
@@ -260,36 +276,35 @@ public class JdbcPostRepository implements IPostRepository {
     }
 
     @Override
-    public PostModel getPost(long id) {
-        return jdbcTemplate.queryForObject(
+    public Optional<PostModel> getPost(long id) {
+        return jdbcTemplate.query(
                 """
-                              SELECT
-                                  p.id,
-                                  p.title,
-                                  p.text,
-                                  p.likes_count,
-                                  COALESCE(t.tags, ARRAY[]::text[]) AS tags,
-                                  COALESCE(c.comments_count, 0) AS comments_count
-                              FROM post p
-                              LEFT JOIN (
-                                  SELECT pt.post_id,
-                                         array_agg(t.title) AS tags
-                                  FROM post_tag pt
-                                  JOIN tag t ON pt.tag_id = t.id
-                                  GROUP BY pt.post_id
-                              ) t ON t.post_id = p.id
-                              LEFT JOIN (
-                                  SELECT post_id,
-                                         COUNT(*) AS comments_count
-                                  FROM comment
-                                  GROUP BY post_id
-                              ) c ON c.post_id = p.id
-                              WHERE p.id = ?
-                        
+                                    SELECT
+                                        p.id,
+                                        p.title,
+                                        p.text,
+                                        p.likes_count,
+                                        COALESCE(t.tags, ARRAY[]::text[]) AS tags,
+                                        COALESCE(c.comments_count, 0) AS comments_count
+                                    FROM post p
+                                    LEFT JOIN (
+                                        SELECT pt.post_id,
+                                               array_agg(t.title) AS tags
+                                        FROM post_tag pt
+                                        JOIN tag t ON pt.tag_id = t.id
+                                        GROUP BY pt.post_id
+                                    ) t ON t.post_id = p.id
+                                    LEFT JOIN (
+                                        SELECT post_id,
+                                               COUNT(*) AS comments_count
+                                        FROM comment
+                                        GROUP BY post_id
+                                    ) c ON c.post_id = p.id
+                                    WHERE p.id = ?
                         """,
                 new PostRowMapper(),
                 id
-        );
+        ).stream().findFirst();
     }
 
 

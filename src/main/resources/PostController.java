@@ -36,8 +36,10 @@ public class PostController {
     }
 
     @GetMapping("/{id}")
-    PostModel getPost(@PathVariable("id") Long id) {
-        return postService.getPost(id);
+    ResponseEntity<PostModel> getPost(@PathVariable("id") Long id) {
+        return postService.getPost(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping()
@@ -112,6 +114,4 @@ public class PostController {
     void deleteComment(@PathVariable("post_id") Long ignoredPostId, @PathVariable("comment_id") Long commentId) {
         postService.deleteComment(commentId);
     }
-
-
 }

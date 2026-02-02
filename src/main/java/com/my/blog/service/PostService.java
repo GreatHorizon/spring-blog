@@ -92,7 +92,7 @@ public class PostService {
         return postRepository.updatePost(postUpdateDto);
     }
 
-    public PostModel getPost(Long id) {
+    public Optional<PostModel> getPost(Long id) {
         return postRepository.getPost(id);
     }
 
