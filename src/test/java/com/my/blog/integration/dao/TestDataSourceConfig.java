@@ -15,7 +15,7 @@ public class TestDataSourceConfig {
 
     @Bean
     DataSource dataSource() {
-        var ds = new DriverManagerDataSource();
+        final var ds = new DriverManagerDataSource();
         ds.setDriverClassName("org.postgresql.Driver");
         ds.setUrl(PostgresContainerHolder.jdbcUrl());
         ds.setUsername(PostgresContainerHolder.username());

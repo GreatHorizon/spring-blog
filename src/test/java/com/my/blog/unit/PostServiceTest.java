@@ -38,7 +38,7 @@ class PostServiceTest {
 
     @Test
     void givenNoText_whenCreatePost_thenThrows() {
-        var dto = new PostUpdateDto(
+        final var dto = new PostUpdateDto(
                 null,
                 null,
                 "Test text",
@@ -56,7 +56,7 @@ class PostServiceTest {
 
     @Test
     void givenNoTitle_whenCreatePost_thenThrows() {
-        var dto = new PostUpdateDto(
+        final var dto = new PostUpdateDto(
                 null,
                 "text",
                 null,
@@ -73,7 +73,7 @@ class PostServiceTest {
 
     @Test
     void givenNoTags_whenCreatePost_thenThrows() {
-        var dto = new PostUpdateDto(
+        final var dto = new PostUpdateDto(
                 null,
                 "text",
                 "title",
@@ -292,14 +292,14 @@ class PostServiceTest {
 
     @Test
     void createPost_success() {
-        var dto = new PostUpdateDto(
+        final var dto = new PostUpdateDto(
                 null,
                 "Test title",
                 "Test text",
                 List.of("java", "spring")
         );
 
-        var expected = new PostModel(
+        final var expected = new PostModel(
                 1L,
                 "Test title",
                 "Test text",
@@ -310,7 +310,7 @@ class PostServiceTest {
 
         Mockito.when(postRepository.createPost(dto)).thenReturn(expected);
 
-        var result = postService.createPost(dto);
+        final var result = postService.createPost(dto);
 
         assertEquals(expected, result);
         Mockito.verify(postRepository).createPost(dto);
@@ -335,7 +335,7 @@ class PostServiceTest {
 
     @Test
     void givenNoText_whenUpdatePost_thenThrows() {
-        var dto = new PostUpdateDto(
+        final var dto = new PostUpdateDto(
                 null,
                 null,
                 "1231",
@@ -352,7 +352,7 @@ class PostServiceTest {
 
     @Test
     void givenNoTags_whenUpdatePost_thenThrows() {
-        var dto = new PostUpdateDto(
+        final var dto = new PostUpdateDto(
                 null,
                 "1231",
                 "123",
@@ -369,7 +369,7 @@ class PostServiceTest {
 
     @Test
     void givenNoId_whenUpdatePost_thenThrows() {
-        var dto = new PostUpdateDto(
+        final var dto = new PostUpdateDto(
                 null,
                 "1231",
                 "123",

@@ -44,7 +44,7 @@ class JdbcRepositoryTest {
     }
 
     private void runSchema() {
-        var populator = new ResourceDatabasePopulator();
+        final var populator = new ResourceDatabasePopulator();
         populator.addScript(new ClassPathResource("schema.sql"));
         populator.execute(dataSource);
     }
