@@ -26,7 +26,6 @@ public class JdbcPostRepository implements IPostRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-
     private static final String POST_FILTER_DATASET_CTE = """
             WITH dataset AS (
                 SELECT

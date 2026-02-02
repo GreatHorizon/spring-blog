@@ -36,34 +36,47 @@ public class PostController {
     }
 
     @GetMapping("/{id}")
-    ResponseEntity<PostModel> getPost(@PathVariable("id") Long id) {
+    ResponseEntity<PostModel> getPost(
+            @PathVariable("id") Long id
+    ) {
         return postService.getPost(id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping()
-    PostModel createPost(@RequestBody PostUpdateDto postUpdateDto) {
+    PostModel createPost(
+            @RequestBody PostUpdateDto postUpdateDto
+    ) {
         return postService.createPost(postUpdateDto);
     }
 
     @PutMapping("/{id}")
-    PostModel updatePost(@RequestBody PostUpdateDto postsDto) {
+    PostModel updatePost(
+            @RequestBody PostUpdateDto postsDto
+    ) {
         return postService.updatePost(postsDto);
     }
 
     @DeleteMapping("/{id}")
-    void deletePost(@PathVariable("id") Long id) {
+    void deletePost(
+            @PathVariable("id") Long id
+    ) {
         postService.deletePost(id);
     }
 
     @PostMapping("/{id}/likes")
-    int incrementLikesCount(@PathVariable("id") Long id) {
+    int incrementLikesCount(
+            @PathVariable("id") Long id
+    ) {
         return postService.incrementLikesCount(id);
     }
 
     @PutMapping("/{id}/image")
-    public String updateImage(@PathVariable("id") Long postId, @RequestParam("image") MultipartFile file) {
+    public String updateImage(
+            @PathVariable("id") Long postId,
+            @RequestParam("image") MultipartFile file
+    ) {
         final var filePath = filesService.upload(file);
 
         if (filePath == null) {
@@ -76,7 +89,9 @@ public class PostController {
     }
 
     @GetMapping("/{id}/image")
-    ResponseEntity<Resource> getImage(@PathVariable("id") Long id) {
+    ResponseEntity<Resource> getImage(
+            @PathVariable("id") Long id
+    ) {
         final var imagePath = postService.getPostImagePath(id);
 
         if (imagePath.isEmpty()) {
@@ -91,27 +106,42 @@ public class PostController {
     }
 
     @GetMapping("/{id}/comments")
-    List<CommentModel> getComments(@PathVariable("id") Long id) {
+    List<CommentModel> getComments(
+            @PathVariable("id") Long id
+    ) {
         return postService.getComments(id);
     }
 
     @GetMapping("/{post_id}/comments/{comment_id}")
-    CommentModel getComment(@PathVariable("post_id") Long ignoredPostId, @PathVariable("comment_id") Long commentId) {
+    CommentModel getComment(
+            @PathVariable("post_id") Long ignoredPostId,
+            @PathVariable("comment_id") Long commentId
+    ) {
         return postService.getComment(commentId);
     }
 
     @PostMapping("/{post_id}/comments")
-    CommentModel createComment(@PathVariable("post_id") Long ignoredPostId, @RequestBody CommentModel commentModel) {
+    CommentModel createComment(
+            @PathVariable("post_id") Long ignoredPostId,
+            @RequestBody CommentModel commentModel
+    ) {
         return postService.createComment(commentModel);
     }
 
     @PutMapping("/{post_id}/comments/{comment_id}")
-    CommentModel updateComment(@PathVariable("post_id") Long ignoredPostId, @PathVariable("comment_id") Long ignoredCommentId, @RequestBody CommentModel commentModel) {
+    CommentModel updateComment(
+            @PathVariable("post_id") Long ignoredPostId,
+            @PathVariable("comment_id") Long ignoredCommentId,
+            @RequestBody CommentModel commentModel
+    ) {
         return postService.updateComment(commentModel);
     }
 
     @DeleteMapping("/{post_id}/comments/{comment_id}")
-    void deleteComment(@PathVariable("post_id") Long ignoredPostId, @PathVariable("comment_id") Long commentId) {
+    void deleteComment(
+            @PathVariable("post_id") Long ignoredPostId,
+            @PathVariable("comment_id") Long commentId
+    ) {
         postService.deleteComment(commentId);
     }
 }

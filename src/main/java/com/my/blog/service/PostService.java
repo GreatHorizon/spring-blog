@@ -38,7 +38,12 @@ public class PostService {
         final var postsCount = postRepository.countPosts(searchParams);
 
         if (postsCount == 0) {
-            return new PostsDto(new ArrayList<>(), false, false, 0);
+            return new PostsDto(
+                    new ArrayList<>(),
+                    false,
+                    false,
+                    0
+            );
         }
 
         final var pageCount = (postsCount + pageSize - 1) / pageSize;
