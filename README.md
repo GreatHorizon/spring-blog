@@ -42,6 +42,9 @@ src/main/resources/application.properties
 spring.datasource.url=jdbc:postgresql://localhost:5433/blog
 spring.datasource.username=name
 spring.datasource.password=pass
+
+/// Путь для сохранения фото
+com.my.blog.uploads.path=uploads/
 ```
 
 > ⚠️ Порт, имя базы данных, пользователь и пароль могут отличаться — используйте свои значения.
