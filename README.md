@@ -8,7 +8,7 @@
 * PostgreSQL
 * JUnit 5
 * Mockito
-* Maven
+* Gradle
 
 ---
 
@@ -65,41 +65,32 @@ spring.datasource.password=pass
 
 ---
 
-## ▶️ Запуск
-
-1. Запустить PostgreSQL
-2. Создать базу данных `blog`
-3. Добавить `application.properties`
-4. Собрать проект:
+## ▶️ Запуск тестов
 
 ```bash
-mvn clean test
+./gradlew test
 ```
-
---- 
-
-5. Запустить приложение через servlet-container (Tomcat / Jetty)
 
 ---
 
-## 📦 Сборка WAR
+## 📦 Сборка JAR
 
-Проект предназначен для развёртывания во **внешнем servlet-контейнере** (Tomcat / Jetty), поэтому собирается в формате *
-*WAR**.
+### Gradle
 
-### Maven
-
-Сборка WAR-файла:
+Сборка JAR-файла:
 
 ```bash
-mvn clean package
+ ./gradlew clean bootJar
 ```
 
-Готовый файл появится в директории:
+JAR-файл находится в:
 
 ```
-target/blog.war
+build/libs/
 ```
 
-WAR-файл можно скопировать в директорию `webapps` Tomcat или задеплоить любым другим способом.
+Запуск собранного JAR-файла:
+```
+java -jar build/libs/blog-0.0.1-SNAPSHOT.jar
+```
 
