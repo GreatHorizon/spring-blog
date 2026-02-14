@@ -2,6 +2,7 @@ package com.my.blog.controller;
 
 import com.my.blog.dto.PostUpdateDto;
 import com.my.blog.dto.PostsDto;
+import com.my.blog.exception.EntityNotFoundException;
 import com.my.blog.model.CommentModel;
 import com.my.blog.model.PostModel;
 import com.my.blog.service.FilesService;
@@ -20,6 +21,8 @@ public class PostController {
 
     final PostService postService;
     final FilesService filesService;
+
+    private final static String UNABLE_TO_UPLOAD_FILE_ERROR_TEXT = "Unable to upload file";
 
     PostController(PostService postService, FilesService filesService) {
         this.postService = postService;
@@ -54,7 +57,7 @@ public class PostController {
     @PutMapping("/{id}")
     PostModel updatePost(
             @RequestBody PostUpdateDto postsDto
-    ) {
+    ) throws EntityNotFoundException {
         return postService.updatePost(postsDto);
     }
 
@@ -80,7 +83,7 @@ public class PostController {
         final var filePath = filesService.upload(file);
 
         if (filePath == null) {
-            throw new RuntimeException("Unable to upload file");
+            throw new RuntimeException(UNABLE_TO_UPLOAD_FILE_ERROR_TEXT);
         }
 
         postService.updatePostImage(postId, filePath);
