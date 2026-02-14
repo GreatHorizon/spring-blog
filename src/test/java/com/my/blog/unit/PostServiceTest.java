@@ -2,6 +2,7 @@ package com.my.blog.unit;
 
 import com.my.blog.dto.PostUpdateDto;
 import com.my.blog.dto.PostsDto;
+import com.my.blog.exception.EntityNotFoundException;
 import com.my.blog.model.CommentModel;
 import com.my.blog.model.PostModel;
 import com.my.blog.repository.IPostRepository;
@@ -388,7 +389,7 @@ class PostServiceTest {
     }
 
     @Test
-    void givenCorrectDto_whenUpdatePost_thenReturnModel() {
+    void givenCorrectDto_whenUpdatePost_thenReturnModel() throws EntityNotFoundException {
         final var dto = new PostUpdateDto(
                 1L,
                 "1231",
