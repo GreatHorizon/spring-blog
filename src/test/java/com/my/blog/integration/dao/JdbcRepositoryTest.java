@@ -2,6 +2,7 @@ package com.my.blog.integration.dao;
 
 
 import com.my.blog.dto.PostUpdateDto;
+import com.my.blog.exception.EntityNotFoundException;
 import com.my.blog.integration.BaseTestContainerTest;
 import com.my.blog.model.CommentModel;
 import com.my.blog.model.PostModel;
@@ -125,7 +126,7 @@ class JdbcRepositoryTest extends BaseTestContainerTest {
     }
 
     @Test
-    void givenPostUpdateDto_whenUpdatePost_thenReturnUpdatedPost() {
+    void givenPostUpdateDto_whenUpdatePost_thenReturnUpdatedPost() throws EntityNotFoundException {
         insertPost("post text", "post title", 100, "tag1", "some comment");
 
 
