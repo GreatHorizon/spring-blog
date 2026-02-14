@@ -1,5 +1,6 @@
 package com.my.blog.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -13,7 +14,8 @@ import java.util.Objects;
 
 @Service
 public class FilesService {
-    public static final String UPLOAD_DIR = "uploads/";
+    @Value("${com.my.blog.uploads.path}")
+    private String UPLOAD_DIR;
 
     public String upload(MultipartFile file) {
         try {
