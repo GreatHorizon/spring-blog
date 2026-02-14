@@ -1,22 +1,21 @@
 package com.my.blog.integration.mvc;
 
 import com.my.blog.dto.PostUpdateDto;
+import com.my.blog.integration.BaseTestContainerTest;
 import com.my.blog.model.CommentModel;
 import com.my.blog.repository.IPostRepository;
 import com.my.blog.utils.SearchParams;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
+import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -24,36 +23,30 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@TestPropertySource(locations = "classpath:test-application.properties")
-@SpringJUnitConfig(classes = {
-        DataSourceConfiguration.class,
-        WebConfiguration.class
-})
-@WebAppConfiguration
-public class PostControllerIntegrationTest {
+
+@SpringBootTest
+@Transactional
+public class PostControllerIntegrationTest extends BaseTestContainerTest {
 
     @Autowired
     private WebApplicationContext wac;
 
     @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-    @Autowired
-    @Qualifier("jdbcPostRepository")
     private IPostRepository repository;
 
+    @Autowired
+    private DataSource dataSource;
+
     private MockMvc mockMvc;
+
 
     @BeforeEach
     void setup() {
         mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
 
-        // Чистим БД перед каждым тестом
-        jdbcTemplate.execute("DELETE FROM post");
-        jdbcTemplate.execute("DELETE FROM comment");
-        jdbcTemplate.execute("ALTER SEQUENCE post_id_seq RESTART WITH 1");
-        jdbcTemplate.execute("ALTER SEQUENCE comment_id_seq RESTART WITH 1");
+        runSchema(dataSource);
     }
+
 
     @Test
     void givenUpdatePostModel_whenCreatePost_thenReturnPost() throws Exception {
@@ -297,7 +290,7 @@ public class PostControllerIntegrationTest {
         for (int i = 0; i < count; i++) {
             repository.createPost(new PostUpdateDto(null, "text", "title" + i, i % 2 == 0 ? List.of("2") : List.of("1")));
         }
-        
+
         repository.countPosts(new SearchParams(null, null));
     }
 }

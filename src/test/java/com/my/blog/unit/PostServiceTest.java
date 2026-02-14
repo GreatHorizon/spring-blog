@@ -9,11 +9,10 @@ import com.my.blog.service.PostService;
 import com.my.blog.utils.SearchParams;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,14 +20,18 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = TestConfig.class)
+@SpringBootTest(
+        classes = {
+                IPostRepository.class,
+                PostService.class
+        }
+)
 class PostServiceTest {
 
     @Autowired
     PostService postService;
 
-    @Autowired
+    @MockitoBean
     IPostRepository postRepository;
 
     @BeforeEach
