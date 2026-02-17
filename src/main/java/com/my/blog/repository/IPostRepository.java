@@ -1,7 +1,6 @@
 package com.my.blog.repository;
 
 import com.my.blog.dto.PostUpdateDto;
-import com.my.blog.exception.EntityNotFoundException;
 import com.my.blog.model.CommentModel;
 import com.my.blog.model.PostModel;
 import com.my.blog.utils.SearchParams;

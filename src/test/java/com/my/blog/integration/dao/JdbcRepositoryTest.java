@@ -2,7 +2,6 @@ package com.my.blog.integration.dao;
 
 
 import com.my.blog.dto.PostUpdateDto;
-import com.my.blog.exception.EntityNotFoundException;
 import com.my.blog.integration.BaseTestContainerTest;
 import com.my.blog.model.CommentModel;
 import com.my.blog.model.PostModel;
