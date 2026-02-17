@@ -389,7 +389,7 @@ class PostServiceTest {
     }
 
     @Test
-    void givenCorrectDto_whenUpdatePost_thenReturnModel() throws EntityNotFoundException {
+    void givenCorrectDto_whenUpdatePost_thenReturnModel()  {
         final var dto = new PostUpdateDto(
                 1L,
                 "1231",

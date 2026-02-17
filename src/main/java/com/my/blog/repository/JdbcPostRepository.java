@@ -22,12 +22,6 @@ import java.util.Optional;
 @Repository
 public class JdbcPostRepository implements IPostRepository {
 
-    private final JdbcTemplate jdbcTemplate;
-
-    public JdbcPostRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
-
     private static final String POST_FILTER_DATASET_CTE = """
             WITH dataset AS (
                 SELECT
@@ -51,8 +45,6 @@ public class JdbcPostRepository implements IPostRepository {
                 )
             )
             """;
-
-
     private static final String REMOVE_TAG_RELATION_QUERY = """
                 DELETE FROM post_tag pt
                 WHERE pt.post_id = :postId
@@ -62,33 +54,26 @@ public class JdbcPostRepository implements IPostRepository {
                       WHERE t.title IN (:titles)
                   )
             """;
-
     private static final String UPDATE_POST_QUERY = """
             UPDATE POST SET
             title = COALESCE(?, title),
             text = COALESCE(?, text)
             where id = ?
             """;
-
-
     private static final String CREATE_POST_QUERY = """
                     INSERT INTO post(text, title)
                     values (:text, :title)
                     RETURNING id
             """;
-
     private static final String INSERT_TAGS_QUERY = """
                  INSERT INTO tag (title)
                  VALUES(?)
                  ON CONFLICT (title) DO NOTHING
             """;
-
-
     private static final String INSERT_POST_TAG_RELATION_QUERY = """
             INSERT INTO post_tag(post_id, tag_id)
             VALUES (?, ?)
             """;
-
     private static final String GET_POSTS_QUERY = POST_FILTER_DATASET_CTE + """
                 SELECT *
                 FROM dataset
@@ -96,15 +81,11 @@ public class JdbcPostRepository implements IPostRepository {
                 OFFSET :offset
                 LIMIT :limit
             """;
-
-
     private static final String GET_TAGS_QUERY = """
             SELECT id, title
             FROM tag
             WHERE title IN (:names)
             """;
-
-
     private static final String GET_TAG_QUERY = """
                         SELECT
                             p.id,
@@ -129,51 +110,41 @@ public class JdbcPostRepository implements IPostRepository {
                         ) c ON c.post_id = p.id
                         WHERE p.id = ?
             """;
-
     private static final String DELETE_POST_QUERY = """
             DELETE FROM post
             WHERE ID = ?
             """;
-
     private static final String INCREMENT_LIKES_COUNT_QUERY = """
             UPDATE POST SET likes_count = likes_count + 1
             where id = ?
             RETURNING likes_count;
             """;
-
-
     private static final String GET_COMMENTS_QUERY = """
             SELECT id, text, post_id FROM comment
             WHERE post_id = ?
             """;
-
     private static final String GET_COMMENT_QUERY = """
             SELECT id, text, post_id FROM comment
             WHERE id = ?
             """;
-
     private static final String DELETE_COMMENT_QUERY = """
             DELETE FROM comment
             WHERE id = ?;
             """;
-
     private static final String CREATE_COMMENT_QUERY = """
             INSERT INTO comment(post_id, text) values(?, ?)
             RETURNING id;
             """;
-
     private static final String UPDATE_COMMENT_QUERY = """
             UPDATE comment SET
             text = ?
             where post_id = ?
             """;
-
     private static final String UPDATE_POST_IMAGE_QUERY = """
             INSERT INTO post_image(post_id, filename) values (?, ?)
             ON CONFLICT (post_id) DO UPDATE
             SET filename = excluded.filename
             """;
-
     private static final String GET_POST_IMAGE_QUERY = """
             SELECT filename FROM post_image
             WHERE post_id = ?
@@ -183,10 +154,15 @@ public class JdbcPostRepository implements IPostRepository {
 
     private static final String POST_NOT_FOUND_ERROR_TEXT = "Post not found";
 
+    private final JdbcTemplate jdbcTemplate;
+
+    public JdbcPostRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     @Transactional
     @Override
-    public PostModel updatePost(PostUpdateDto postUpdateDto) throws EntityNotFoundException {
+    public PostModel updatePost(PostUpdateDto postUpdateDto)  {
         updatePostTable(postUpdateDto);
 
         updatePostTags(postUpdateDto);
@@ -228,7 +204,7 @@ public class JdbcPostRepository implements IPostRepository {
         namedParameterJdbcTemplate.update(REMOVE_TAG_RELATION_QUERY, params);
     }
 
-    private void updatePostTable(PostUpdateDto postUpdateDto) throws EntityNotFoundException {
+    private void updatePostTable(PostUpdateDto postUpdateDto) {
         final var updated = jdbcTemplate.update(
                 UPDATE_POST_QUERY,
                 postUpdateDto.title(),

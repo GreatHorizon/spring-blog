@@ -18,7 +18,7 @@ public interface IPostRepository {
 
     long countPosts(SearchParams searchParams);
 
-    PostModel updatePost(PostUpdateDto postUpdateDto) throws EntityNotFoundException;
+    PostModel updatePost(PostUpdateDto postUpdateDto);
 
     void deletePost(long id);
 

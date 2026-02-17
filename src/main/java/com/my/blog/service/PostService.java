@@ -88,7 +88,7 @@ public class PostService {
         return new SearchParams(joiner.toString(), tags);
     }
 
-    public PostModel updatePost(PostUpdateDto postUpdateDto) throws EntityNotFoundException {
+    public PostModel updatePost(PostUpdateDto postUpdateDto) {
         validatePost(postUpdateDto);
 
         if (postUpdateDto.id() == null) {

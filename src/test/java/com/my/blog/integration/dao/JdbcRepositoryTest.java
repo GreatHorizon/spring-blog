@@ -126,7 +126,7 @@ class JdbcRepositoryTest extends BaseTestContainerTest {
     }
 
     @Test
-    void givenPostUpdateDto_whenUpdatePost_thenReturnUpdatedPost() throws EntityNotFoundException {
+    void givenPostUpdateDto_whenUpdatePost_thenReturnUpdatedPost()  {
         insertPost("post text", "post title", 100, "tag1", "some comment");
 
 

@@ -19,10 +19,9 @@ import java.util.List;
 @RequestMapping("/api/posts")
 public class PostController {
 
+    private final static String UNABLE_TO_UPLOAD_FILE_ERROR_TEXT = "Unable to upload file";
     final PostService postService;
     final FilesService filesService;
-
-    private final static String UNABLE_TO_UPLOAD_FILE_ERROR_TEXT = "Unable to upload file";
 
     PostController(PostService postService, FilesService filesService) {
         this.postService = postService;
@@ -57,7 +56,7 @@ public class PostController {
     @PutMapping("/{id}")
     PostModel updatePost(
             @RequestBody PostUpdateDto postsDto
-    ) throws EntityNotFoundException {
+    )  {
         return postService.updatePost(postsDto);
     }
 
