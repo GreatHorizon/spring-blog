@@ -1,4 +1,4 @@
-package com.my.blog.integration.dao;
+package com.my.blog.integration;
 
 import org.testcontainers.containers.PostgreSQLContainer;
 

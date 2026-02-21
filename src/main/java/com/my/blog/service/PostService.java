@@ -26,11 +26,11 @@ public class PostService {
 
     public PostsDto getPosts(String search, int pageNumber, int pageSize) {
         if (pageSize <= 0) {
-            throw new IllegalArgumentException("pageSize should be > 0");
+            throw new IllegalArgumentException(formNumLessThanZeroErrorText("pageSize"));
         }
 
         if (pageNumber <= 0) {
-            throw new IllegalArgumentException("pageNumber should be > 0");
+            throw new IllegalArgumentException(formNumLessThanZeroErrorText("pageNumber"));
         }
 
         final var searchParams = parseSearchParams(search);
@@ -91,7 +91,7 @@ public class PostService {
         validatePost(postUpdateDto);
 
         if (postUpdateDto.id() == null) {
-            throw new IllegalArgumentException("id should not be null");
+            throw new IllegalArgumentException(formPropertyNotNullErrorText("id"));
         }
 
         return postRepository.updatePost(postUpdateDto);
@@ -123,11 +123,11 @@ public class PostService {
 
     public CommentModel createComment(CommentModel commentModel) {
         if (commentModel.postId() == null) {
-            throw new IllegalArgumentException("postId should not be null");
+            throw new IllegalArgumentException(formPropertyNotNullErrorText("postId"));
         }
 
         if (commentModel.text() == null) {
-            throw new IllegalArgumentException("text should not be null");
+            throw new IllegalArgumentException(formPropertyNotNullErrorText("text"));
         }
 
         return postRepository.createComment(commentModel);
@@ -147,15 +147,23 @@ public class PostService {
 
     private void validatePost(PostUpdateDto postUpdateDto) {
         if (postUpdateDto.title() == null) {
-            throw new IllegalArgumentException("title should not be null");
+            throw new IllegalArgumentException(formPropertyNotNullErrorText("title"));
         }
 
         if (postUpdateDto.text() == null) {
-            throw new IllegalArgumentException("text should not be null");
+            throw new IllegalArgumentException(formPropertyNotNullErrorText("text"));
         }
 
         if (postUpdateDto.tags() == null) {
-            throw new IllegalArgumentException("tags should not be null");
+            throw new IllegalArgumentException(formPropertyNotNullErrorText("tags"));
         }
+    }
+
+    private String formPropertyNotNullErrorText(String propertyName) {
+        return propertyName + " should not be null";
+    }
+
+    private String formNumLessThanZeroErrorText(String propertyName) {
+        return propertyName + " should be > " + 0;
     }
 }

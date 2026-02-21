@@ -2,6 +2,7 @@ package com.my.blog.integration.dao;
 
 
 import com.my.blog.dto.PostUpdateDto;
+import com.my.blog.integration.BaseTestContainerTest;
 import com.my.blog.model.CommentModel;
 import com.my.blog.model.PostModel;
 import com.my.blog.repository.JdbcPostRepository;
@@ -9,13 +10,9 @@ import com.my.blog.utils.SearchParams;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
@@ -24,11 +21,10 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = TestDataSourceConfig.class)
-@Transactional
-class JdbcRepositoryTest {
 
+@Transactional
+@SpringBootTest
+class JdbcRepositoryTest extends BaseTestContainerTest {
     @Autowired
     JdbcPostRepository repository;
 
@@ -39,14 +35,8 @@ class JdbcRepositoryTest {
     JdbcTemplate jdbcTemplate;
 
     @BeforeEach
-    void setupSchema() {
-        runSchema();
-    }
-
-    private void runSchema() {
-        final var populator = new ResourceDatabasePopulator();
-        populator.addScript(new ClassPathResource("schema.sql"));
-        populator.execute(dataSource);
+    void setup() {
+        runSchema(dataSource);
     }
 
     @AfterEach
@@ -135,7 +125,7 @@ class JdbcRepositoryTest {
     }
 
     @Test
-    void givenPostUpdateDto_whenUpdatePost_thenReturnUpdatedPost() {
+    void givenPostUpdateDto_whenUpdatePost_thenReturnUpdatedPost()  {
         insertPost("post text", "post title", 100, "tag1", "some comment");
 
 

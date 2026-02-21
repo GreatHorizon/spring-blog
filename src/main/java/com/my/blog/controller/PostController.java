@@ -18,6 +18,7 @@ import java.util.List;
 @RequestMapping("/api/posts")
 public class PostController {
 
+    private final static String UNABLE_TO_UPLOAD_FILE_ERROR_TEXT = "Unable to upload file";
     final PostService postService;
     final FilesService filesService;
 
@@ -54,7 +55,7 @@ public class PostController {
     @PutMapping("/{id}")
     PostModel updatePost(
             @RequestBody PostUpdateDto postsDto
-    ) {
+    )  {
         return postService.updatePost(postsDto);
     }
 
@@ -80,7 +81,7 @@ public class PostController {
         final var filePath = filesService.upload(file);
 
         if (filePath == null) {
-            throw new RuntimeException("Unable to upload file");
+            throw new RuntimeException(UNABLE_TO_UPLOAD_FILE_ERROR_TEXT);
         }
 
         postService.updatePostImage(postId, filePath);
